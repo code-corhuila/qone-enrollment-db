@@ -27,6 +27,10 @@ Specification: `06-data/models.md` (schema `enrollment`), `06-data/modeling-conv
 | `catalog_subject_view`, `catalog_section_view`, `billing_tuition_view` | projections fed by catalog and billing events (D-11) | rebuilt from events, never edited by hand |
 | `idempotency_key`, `outbox`, `inbox` | the shared shapes of 06-data | `EnrollmentConfirmed`, `EnrollmentRejected`, `EnrollmentCancelled`, `CertificateIssued` |
 
+An `Idempotency-Key` is scoped to its owner (V018, qone-docs#55): the primary key is `(owner_id, key)`,
+where the owner is the user id of the token or the subject of a SERVICE token, and `request_hash` keeps the
+SHA-256 of the canonical request body so a replay with another body is refused instead of answered.
+
 `student_id` and `section_id` are ids of other domains and are not foreign keys.
 
 ## How to run it
