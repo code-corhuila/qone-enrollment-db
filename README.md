@@ -24,7 +24,7 @@ Specification: `06-data/models.md` (schema `enrollment`), `06-data/modeling-conv
 | `enrollment` | the facts the saga records: `CONFIRMED`, `REJECTED` (with its reason), `CANCELLED` | **one `CONFIRMED` per student, subject and term by partial unique index** (INV-ENR-001); `REJECTED` if and only if a reason; `AGENT` if and only if a `confirmation_id` (INV-ENR-005) |
 | `enrollment_slot` | the schedule snapshot of an enrollment | day and times shape; the conflict rule (INV-ENR-003) is in the domain |
 | `certificate` | issued certificates with their PDF, rendered once (D-12) | type list, public code `QMP-XXXXXXXX` unique |
-| `catalog_subject_view`, `catalog_section_view`, `billing_tuition_view` | projections fed by catalog and billing events (D-11) | rebuilt from events, never edited by hand |
+| `catalog_subject_view`, `catalog_section_view`, `billing_tuition_view` | projections fed by catalog and billing events (D-11); a section keeps its `professor_id` (V019) so only its professor reads the roster | rebuilt from events, never edited by hand |
 | `idempotency_key`, `outbox`, `inbox` | the shared shapes of 06-data | `EnrollmentConfirmed`, `EnrollmentRejected`, `EnrollmentCancelled`, `CertificateIssued` |
 
 `student_id` and `section_id` are ids of other domains and are not foreign keys.
