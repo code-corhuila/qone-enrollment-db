@@ -24,8 +24,12 @@ Specification: `06-data/models.md` (schema `enrollment`), `06-data/modeling-conv
 | `enrollment` | the facts the saga records: `CONFIRMED`, `REJECTED` (with its reason), `CANCELLED` | **one `CONFIRMED` per student, subject and term by partial unique index** (INV-ENR-001); `REJECTED` if and only if a reason; `AGENT` if and only if a `confirmation_id` (INV-ENR-005) |
 | `enrollment_slot` | the schedule snapshot of an enrollment | day and times shape; the conflict rule (INV-ENR-003) is in the domain |
 | `certificate` | issued certificates with their PDF, rendered once (D-12) | type list, public code `QMP-XXXXXXXX` unique |
-| `catalog_subject_view`, `catalog_section_view`, `billing_tuition_view` | projections fed by catalog and billing events (D-11) | rebuilt from events, never edited by hand |
+| `catalog_subject_view`, `catalog_section_view`, `billing_tuition_view` | projections fed by catalog and billing events (D-11); a section keeps its `professor_id` (V019) so only its professor reads the roster | rebuilt from events, never edited by hand |
 | `idempotency_key`, `outbox`, `inbox` | the shared shapes of 06-data | `EnrollmentConfirmed`, `EnrollmentRejected`, `EnrollmentCancelled`, `CertificateIssued` |
+
+An `Idempotency-Key` is scoped to its owner (V018, qone-docs#55): the primary key is `(owner_id, key)`,
+where the owner is the user id of the token or the subject of a SERVICE token, and `request_hash` keeps the
+SHA-256 of the canonical request body so a replay with another body is refused instead of answered.
 
 `student_id` and `section_id` are ids of other domains and are not foreign keys.
 
@@ -38,6 +42,19 @@ docker compose --env-file .env -f deploy/compose.yml up -d enrollment-db
 docker compose --env-file .env -f deploy/compose.yml --profile tooling run --rm enrollment-db-migrate
 sh scripts/rebuild-check.sh     # the Annex A check db-ci runs on every pull request
 ```
+
+## Seed identities
+
+The seeds name only synthetic people (`code-corhuila/qone-docs#55`): the student names of the records and enrollments and the professor names of the section projection is
+`Estudiante Demo 01`..`05` or `Profesor Demo 01`..`03`, with the same ids as the identity seed
+(`qone-identity-db`, e-mails on the reserved `.test` TLD). No real name, e-mail or credential is
+versioned: `scripts/check-seed-identities.sh` (db-ci, and step 0 of the rebuild check) fails on an
+e-mail outside `.test` or a password-hash literal in any migration, and step 6 of the rebuild check
+fails on a seeded name that is not synthetic.
+
+The renaming edited V014, V016, V017 in place, a decided exception to "a merged version is immutable": its
+Flyway checksum changed, so a machine that already applied it runs `sh scripts/down.sh --volumes`
+once in `qone-infra` (every environment is local) and brings the platform up again.
 
 ## Branching
 
